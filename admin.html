@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="glass-card p-4">
+            <h3 class="fw-bold mb-4"><i class="fa-solid fa-user-shield text-warning"></i> Админ-панель</h3>
+
+            <form method="POST" class="mb-4">
+                <label class="text-muted small fw-bold">Турнир</label>
+                <select name="league_select" class="form-select bg-dark text-white border-secondary mb-3">
+                    <option value="CL">Лига Чемпионов (CL)</option>
+                    <option value="PL">АПЛ (Англия)</option>
+                    <option value="PD">Ла Лига (Испания)</option>
+                </select>
+
+                <div class="row g-2">
+                    <div class="col-6">
+                        <button type="submit" name="api_load" value="true" class="btn btn-primary w-100 h-100 py-2">
+                            <i class="fa-solid fa-cloud-arrow-down me-1"></i> Расписание
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button type="submit" name="api_update_scores" value="true" class="btn btn-success w-100 h-100 py-2">
+                            <i class="fa-solid fa-rotate me-1"></i> Live Итоги
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <hr class="border-secondary">
+
+            <form method="POST">
+                <input type="hidden" name="manual_add" value="true">
+                <label class="text-muted small fw-bold">Ручное добавление</label>
+                <div class="input-group mb-4">
+                    <input type="text" name="home_team" class="form-control" placeholder="Home" required>
+                    <input type="text" name="away_team" class="form-control" placeholder="Away" required>
+                    <button class="btn btn-outline-warning fw-bold">+</button>
+                </div>
+            </form>
+
+            <h5 class="fw-bold mb-3 border-top border-secondary pt-3">Управление матчами</h5>
+
+            {% if matches|length == 0 %}
+                <p class="text-muted text-center small">Матчей пока нет</p>
+            {% else %}
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <ul class="list-group list-group-flush">
+                        {% for m in matches %}
+                        <li class="list-group-item bg-transparent text-white border-secondary d-flex justify-content-between align-items-center px-0">
+                            <div>
+                                <span class="fw-bold">{{ m.home_team }}</span>
+                                <span class="text-muted mx-1">vs</span>
+                                <span class="fw-bold">{{ m.away_team }}</span>
+                                <div class="small text-muted">
+                                    {% if m.is_finished %}
+                                        <span class="text-success">Завершен ({{ m.home_score }}:{{ m.away_score }})</span>
+                                    {% else %}
+                                        <span class="text-warning">Live/Скоро</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <a href="/delete/{{ m.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Точно удалить этот матч?');">
+                                <i class="fa-solid fa-trash"></i>
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

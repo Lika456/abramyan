@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold mb-0">Матч-центр</h2>
+    {% if not current_user.is_authenticated %}
+        <span class="badge bg-secondary">Гостевой режим</span>
+    {% else %}
+        <span class="badge bg-danger animate-pulse">LIVE DATA</span>
+    {% endif %}
+</div>
+
+<div class="row">
+    {% for match in matches %}
+    <div class="col-lg-6 mb-4">
+        <div class="glass-card h-100 p-4 position-relative hover-lift">
+            <div class="position-absolute top-0 end-0 m-3">
+                {% if match.is_finished %} <span class="badge bg-secondary">Завершен</span>
+                {% else %} <span class="badge bg-danger">LIVE</span> {% endif %}
+            </div>
+
+            <div class="d-flex align-items-center justify-content-between mt-2">
+                <div class="text-center" style="width: 35%;">
+                    <img src="{{ match.home_crest }}" onerror="this.src='https://crests.football-data.org/PL.png'" class="mb-3 drop-shadow" width="60" style="object-fit: contain;">
+                    <h6 class="fw-bold text-truncate">{{ match.home_team }}</h6>
+                </div>
+                <div class="text-center" style="width: 30%;">
+                    {% if match.is_finished %} <div class="display-5 fw-bold text-white">{{ match.home_score }} : {{ match.away_score }}</div>
+                    {% else %} <div class="fs-3 fw-bold text-muted mb-2">VS</div> <div class="small text-muted">{{ match.match_date }}</div> {% endif %}
+                </div>
+                <div class="text-center" style="width: 35%;">
+                    <img src="{{ match.away_crest }}" onerror="this.src='https://crests.football-data.org/PL.png'" class="mb-3 drop-shadow" width="60" style="object-fit: contain;">
+                    <h6 class="fw-bold text-truncate">{{ match.away_team }}</h6>
+                </div>
+            </div>
+
+            <hr class="border-secondary opacity-25 my-4">
+
+            {% if not match.is_finished %}
+
+                {% if current_user.is_authenticated %}
+                    <button class="btn btn-success w-100 py-2 fw-bold shadow-sm"
+                            data-bs-toggle="modal"
+                            data-bs-target="#predictModal"
+                            data-match-id="{{ match.id }}"
+                            data-home="{{ match.home_team }}"
+                            data-away="{{ match.away_team }}">
+                        {% if my_preds.get(match.id) %}
+                            Ваш прогноз: {{ my_preds[match.id].pred_home }} : {{ my_preds[match.id].pred_away }}
+                        {% else %}
+                            Сделать прогноз
+                        {% endif %}
+                    </button>
+
+                    {% if current_user.id == 1 %}
+                    <div class="text-center mt-3">
+                         <a href="/simulate/{{ match.id }}" class="btn btn-sm btn-outline-warning border-0 opacity-50 hover-opacity-100">Simulate</a>
+                    </div>
+                    {% endif %}
+
+                {% else %}
+                    <a href="/login" class="btn btn-secondary w-100 py-2 fw-bold opacity-75">
+                        <i class="fa-solid fa-lock me-2"></i> Войдите для прогноза
+                    </a>
+                {% endif %}
+
+                        {% else %}
+
+                <div class="text-center">
+                    {% if current_user.is_authenticated and my_preds.get(match.id) %}
+
+                        <div class="mb-2 small text-white-50">
+                            Ваш прогноз: <span class="text-white fw-bold">{{ my_preds[match.id].pred_home }} : {{ my_preds[match.id].pred_away }}</span>
+                        </div>
+
+                        {% if my_preds[match.id].points_earned > 0 %}
+                            <span class="badge bg-success shadow-sm">
+                                <i class="fa-solid fa-plus me-1"></i>{{ my_preds[match.id].points_earned }} очков!
+                            </span>
+                        {% else %}
+                            <span class="badge bg-dark border border-secondary text-white-50">
+                                Мимо (0)
+                            </span>
+                        {% endif %}
+
+                    {% else %}
+                        <span class="text-white-50 small">Матч завершен</span>
+            {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="modal fade" id="predictModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-card bg-dark text-white border border-secondary shadow-lg">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold">Сделать ставку</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="predictForm" method="POST" action="">
+                <div class="modal-body text-center py-4">
+                    <div class="d-flex justify-content-center align-items-center mb-4 text-muted small text-uppercase fw-bold">
+                        <span id="modalHome" class="w-50 text-end pe-3">Home</span>
+                        <span>VS</span>
+                        <span id="modalAway" class="w-50 text-start ps-3">Away</span>
+                    </div>
+                    <div class="d-flex justify-content-center gap-3 align-items-center">
+                        <input type="number" name="home_goals" class="score-input" required placeholder="0">
+                        <span class="fs-3 text-muted">:</span>
+                        <input type="number" name="away_goals" class="score-input" required placeholder="0">
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 justify-content-center pb-4">
+                    <button type="submit" class="btn btn-success px-5 fw-bold py-2">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const predictModal = document.getElementById('predictModal')
+    if (predictModal) {
+        predictModal.addEventListener('show.bs.modal', event => {
+            const button = event.relatedTarget
+            const matchId = button.getAttribute('data-match-id')
+            const homeTeam = button.getAttribute('data-home')
+            const awayTeam = button.getAttribute('data-away')
+            predictModal.querySelector('#predictForm').action = `/predict/${matchId}`
+            predictModal.querySelector('#modalHome').textContent = homeTeam
+            predictModal.querySelector('#modalAway').textContent = awayTeam
+            predictModal.querySelectorAll('input').forEach(input => input.value = '')
+        })
+    }
+</script>
+
+<style>
+    .score-input { width: 80px; height: 80px; background: #0f172a; border: 2px solid #334155; border-radius: 12px; color: white; font-size: 2.5rem; text-align: center; font-weight: bold; transition: all 0.2s; }
+    .score-input:focus { outline: none; border-color: #10b981; box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); }
+    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .hover-lift { transition: transform 0.2s; }
+    .hover-lift:hover { transform: translateY(-5px); }
+    .drop-shadow { filter: drop-shadow(0 5px 5px rgba(0,0,0,0.3)); }
+    .hover-opacity-100:hover { opacity: 1 !important; }
+</style>
+
+{% endblock %}

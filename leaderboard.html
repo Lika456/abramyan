@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="glass-card p-4">
+    <h3 class="fw-bold mb-4">🏆 Таблица лидеров</h3>
+    <table class="table table-borderless text-white align-middle">
+        <thead><tr class="text-muted border-bottom border-secondary"><th>#</th><th>Игрок</th><th>Очки</th></tr></thead>
+        <tbody>
+            {% for user in users %}
+            <tr class="border-bottom border-secondary border-opacity-25">
+                <td>
+                    {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}
+                </td>
+                <td>
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ user.username }}" width="40" class="rounded-circle me-2">
+                    {{ user.username }}
+                </td>
+                <td><span class="badge bg-primary">{{ user.points }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
