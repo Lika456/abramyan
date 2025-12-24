@@ -50,7 +50,7 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
-# === ЛОГИКА ===
+
 def update_user_points(match):
     for p in Prediction.query.filter_by(match_id=match.id).all():
         pts = 0
@@ -245,4 +245,5 @@ def profile():
 
 if __name__ == '__main__':
     with app.app_context(): db.create_all()
+
     app.run(debug=True)
